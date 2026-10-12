@@ -1,0 +1,652 @@
+-- Azi Panel | Full Build | Everything Loaded
+-- Tabs: PvP, Visual, Exploit, Utility
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+local Cam = workspace.CurrentCamera
+
+local isMobile = UIS.TouchEnabled
+local mouse = LP:GetMouse()
+
+-- ─── CONFIG ───────────────────────────────────────────────
+local CFG = {
+    -- PvP
+    RapidFire = false, RapidFireRate = 100000,
+    Aimbot = false, AimbotCircle = false, AimbotFOV = 150, AimbotStrength = 0.2,
+    AimbotKey = Enum.KeyCode.E,
+    SilentAim = false, TriggerBot = false, TriggerDist = 30,
+    AutoReload = false, NoReload = false,
+    InstantHit = false, HitboxExpand = false, HitboxSize = 5,
+    DamageMulti = 1, KillAura = false, KillAuraRange = 10,
+    AntiAim = false, TargetPriority = "Closest",
+    BigHead = false, BigHeadSize = 5,
+    MagicBullet = false, IgnoreDead = true, TeamCheck = true, HitPart = "Head",
+    -- Visual
+    TrackAll = false, TrackRange = 100,
+    BoxESP = false, TracerESP = false, SkeletonESP = false, Chams = false,
+    ESPName = false, ESPHealth = false, ESPDistance = false,
+    SoundESP = false, CursorDot = false, FPSPing = false,
+    ESPColor = Color3.fromRGB(255, 255, 255),
+    -- Exploit
+    Fly = false, FlySpeed = 50,
+    Fling = false, AntiFling = false, AntiSit = false,
+    Noclip = false, InfiniteJump = false,
+    ClickTP = false, AntiVoid = false, AntiRagdoll = false,
+    WalkWater = false, FreezePlayer = false,
+    AutoFarm = false, BringAll = false,
+    SpeedToggle = false, SpeedValue = 16,
+    JumpToggle = false, JumpValue = 50,
+    -- Utility
+    PanicKey = Enum.KeyCode.P,
+    ThemeColor = Color3.fromRGB(255, 255, 255),
+}
+
+-- ─── GUI ROOT ─────────────────────────────────────────────
+local sg = Instance.new("ScreenGui")
+sg.Name = "AziPanel"
+sg.ResetOnSpawn = false
+sg.IgnoreGuiInset = true
+sg.DisplayOrder = 100
+pcall(function()
+    if gethui then sg.Parent = gethui() else sg.Parent = PG end
+end)
+if not sg.Parent then sg.Parent = PG end
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, isMobile and 340 or 400, 0, isMobile and 400 or 460)
+main.Position = UDim2.new(0.5, isMobile and -170 or -200, 0.5, isMobile and -200 or -230)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = sg
+local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = main
+local ms = Instance.new("UIStroke"); ms.Color = CFG.ThemeColor; ms.Thickness = 1; ms.Parent = main
+
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1, 0, 0, 34)
+top.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+top.BorderSizePixel = 0
+top.Parent = main
+local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0, 10); tc.Parent = top
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 12, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Azi Panel"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = top
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 26, 0, 26)
+closeBtn.Position = UDim2.new(1, -32, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 13
+closeBtn.Parent = top
+local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 6); cc.Parent = closeBtn
+closeBtn.MouseButton1Click:Connect(function() main.Visible = false end)
+
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, -12, 0, 30)
+tabBar.Position = UDim2.new(0, 6, 0, 38)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = main
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0, 4)
+tabLayout.Parent = tabBar
+
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -12, 1, -80)
+content.Position = UDim2.new(0, 6, 0, 72)
+content.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+content.BorderSizePixel = 0
+content.Parent = main
+local ccn = Instance.new("UICorner"); ccn.CornerRadius = UDim.new(0, 8); ccn.Parent = content
+
+local pages, tabBtns = {}, {}
+local tabNames = { "PvP", "Visual", "Exploit", "Utility" }
+
+local function makePage(name)
+    local sc = Instance.new("ScrollingFrame")
+    sc.Size = UDim2.new(1, -8, 1, -8)
+    sc.Position = UDim2.new(0, 4, 0, 4)
+    sc.BackgroundTransparency = 1
+    sc.BorderSizePixel = 0
+    sc.ScrollBarThickness = 5
+    sc.CanvasSize = UDim2.new(0, 0, 0, 0)
+    sc.Visible = false
+    sc.Parent = content
+    local lay = Instance.new("UIListLayout")
+    lay.Padding = UDim.new(0, 6)
+    lay.SortOrder = Enum.SortOrder.LayoutOrder
+    lay.Parent = sc
+    pages[name] = sc
+end
+
+for _, n in ipairs(tabNames) do makePage(n) end
+
+local function switchTab(name)
+    for _, p in pairs(pages) do p.Visible = false end
+    for n, b in pairs(tabBtns) do
+        b.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+        b.TextColor3 = Color3.fromRGB(220, 220, 220)
+    end
+    if pages[name] then pages[name].Visible = true end
+    if tabBtns[name] then
+        tabBtns[name].BackgroundColor3 = CFG.ThemeColor
+        tabBtns[name].TextColor3 = Color3.fromRGB(0, 0, 0)
+    end
+end
+
+for _, n in ipairs(tabNames) do
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 80, 1, 0)
+    b.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+    b.Text = n
+    b.TextColor3 = Color3.fromRGB(220, 220, 220)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Parent = tabBar
+    local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = b
+    tabBtns[n] = b
+    b.MouseButton1Click:Connect(function() switchTab(n) end)
+end
+switchTab("PvP")
+
+-- ─── UI HELPERS ───────────────────────────────────────────
+local function addToggle(page, text, default, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 30)
+    b.BackgroundColor3 = default and CFG.ThemeColor or Color3.fromRGB(28,28,28)
+    b.Text = text .. ": " .. (default and "ON" or "OFF")
+    b.TextColor3 = default and Color3.fromRGB(0,0,0) or Color3.fromRGB(255,255,255)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Parent = page
+    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = b
+    local state = default
+    b.MouseButton1Click:Connect(function()
+        state = not state
+        b.Text = text .. ": " .. (state and "ON" or "OFF")
+        b.BackgroundColor3 = state and CFG.ThemeColor or Color3.fromRGB(28,28,28)
+        b.TextColor3 = state and Color3.fromRGB(0,0,0) or Color3.fromRGB(255,255,255)
+        cb(state)
+    end)
+    return b
+end
+
+local function addSlider(page, label, minV, maxV, default, step, cb)
+    local wrap = Instance.new("Frame")
+    wrap.Size = UDim2.new(1, 0, 0, 44)
+    wrap.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    wrap.Parent = page
+    local wc = Instance.new("UICorner"); wc.CornerRadius = UDim.new(0, 6); wc.Parent = wrap
+
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(1, -70, 0, 16)
+    lab.Position = UDim2.new(0, 8, 0, 4)
+    lab.BackgroundTransparency = 1
+    lab.Text = label
+    lab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lab.Font = Enum.Font.Gotham
+    lab.TextSize = 11
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = wrap
+
+    local val = Instance.new("TextLabel")
+    val.Size = UDim2.new(0, 60, 0, 16)
+    val.Position = UDim2.new(1, -66, 0, 4)
+    val.BackgroundTransparency = 1
+    val.Text = tostring(default)
+    val.TextColor3 = Color3.fromRGB(255, 255, 255)
+    val.Font = Enum.Font.GothamBold
+    val.TextSize = 11
+    val.Parent = wrap
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, -16, 0, 8)
+    track.Position = UDim2.new(0, 8, 0, 26)
+    track.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    track.Parent = wrap
+    local tkc = Instance.new("UICorner"); tkc.CornerRadius = UDim.new(1, 0); tkc.Parent = track
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = CFG.ThemeColor
+    fill.Parent = track
+    local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(1, 0); fc.Parent = fill
+
+    local dragging = false
+    local function setA(a)
+        a = math.clamp(a, 0, 1)
+        local v = minV + (maxV - minV) * a
+        v = math.floor(v / step + 0.5) * step
+        v = math.clamp(v, minV, maxV)
+        fill.Size = UDim2.new((v - minV) / math.max(maxV - minV, 1), 0, 1, 0)
+        val.Text = tostring(v)
+        cb(v)
+    end
+    setA((default - minV) / math.max(maxV - minV, 1))
+
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            setA((i.Position.X - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1))
+        end
+    end)
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            setA((i.Position.X - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1))
+        end
+    end)
+    return wrap
+end
+
+local function addLabel(page, text)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 20)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = Color3.fromRGB(180, 180, 180)
+    l.Font = Enum.Font.GothamBold
+    l.TextSize = 12
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Parent = page
+    return l
+end
+
+local function addBtn(page, text, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 30)
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    b.Text = text
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Parent = page
+    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = b
+    local s = Instance.new("UIStroke"); s.Color = CFG.ThemeColor; s.Thickness = 1; s.Parent = b
+    b.MouseButton1Click:Connect(cb)
+    return b
+end
+
+-- ─── PvP TAB ──────────────────────────────────────────────
+local pvp = pages["PvP"]
+addLabel(pvp, "─── RAPID FIRE ───")
+addToggle(pvp, "Rapid Fire", false, function(s) CFG.RapidFire = s end)
+addSlider(pvp, "Rate of Fire", 100, 100000, 100000, 100, function(v) CFG.RapidFireRate = v end)
+addToggle(pvp, "Auto Reload", false, function(s) CFG.AutoReload = s end)
+addToggle(pvp, "No Reload", false, function(s) CFG.NoReload = s end)
+
+addLabel(pvp, "─── AIMBOT ───")
+addToggle(pvp, "Aimbot", false, function(s) CFG.Aimbot = s end)
+addToggle(pvp, "Aimbot Circle", false, function(s) CFG.AimbotCircle = s end)
+addSlider(pvp, "Aimbot FOV", 20, 500, 150, 1, function(v) CFG.AimbotFOV = v end)
+addSlider(pvp, "Aimbot Strength", 0.05, 1, 0.2, 0.05, function(v) CFG.AimbotStrength = v end)
+addToggle(pvp, "Silent Aim", false, function(s) CFG.SilentAim = s end)
+addToggle(pvp, "Trigger Bot", false, function(s) CFG.TriggerBot = s end)
+addSlider(pvp, "Trigger Range", 5, 100, 30, 1, function(v) CFG.TriggerDist = v end)
+addToggle(pvp, "Team Check", true, function(s) CFG.TeamCheck = s end)
+addToggle(pvp, "Ignore Dead Players", true, function(s) CFG.IgnoreDead = s end)
+addToggle(pvp, "Anti-Aim", false, function(s) CFG.AntiAim = s end)
+
+addLabel(pvp, "─── DAMAGE ───")
+addToggle(pvp, "Instant Hit", false, function(s) CFG.InstantHit = s end)
+addToggle(pvp, "Hitbox Expander", false, function(s) CFG.HitboxExpand = s end)
+addSlider(pvp, "Hitbox Size", 1, 100, 5, 1, function(v) CFG.HitboxSize = v end)
+addSlider(pvp, "Damage Multiplier", 1, 100, 1, 1, function(v) CFG.DamageMulti = v end)
+addToggle(pvp, "Kill Aura", false, function(s) CFG.KillAura = s end)
+addSlider(pvp, "Kill Aura Range", 1, 50, 10, 1, function(v) CFG.KillAuraRange = v end)
+
+addLabel(pvp, "─── HEAD ───")
+addToggle(pvp, "Big Head", false, function(s) CFG.BigHead = s end)
+addSlider(pvp, "Big Head Size", 1, 200, 5, 1, function(v) CFG.BigHeadSize = v end)
+
+addLabel(pvp, "─── MAGIC BULLET ───")
+addToggle(pvp, "Magic Bullet", false, function(s) CFG.MagicBullet = s end)
+
+-- ─── VISUAL TAB ───────────────────────────────────────────
+local vis = pages["Visual"]
+addLabel(vis, "─── TRACKING ───")
+addToggle(vis, "Track All", false, function(s) CFG.TrackAll = s end)
+addSlider(vis, "Track Range (m)", 10, 100, 100, 1, function(v) CFG.TrackRange = v end)
+addToggle(vis, "Sound ESP", false, function(s) CFG.SoundESP = s end)
+
+addLabel(vis, "─── ESP ───")
+addToggle(vis, "Box ESP", false, function(s) CFG.BoxESP = s end)
+addToggle(vis, "Tracer ESP", false, function(s) CFG.TracerESP = s end)
+addToggle(vis, "Skeleton ESP", false, function(s) CFG.SkeletonESP = s end)
+addToggle(vis, "Chams", false, function(s) CFG.Chams = s end)
+addToggle(vis, "ESP Name", false, function(s) CFG.ESPName = s end)
+addToggle(vis, "ESP Health", false, function(s) CFG.ESPHealth = s end)
+addToggle(vis, "ESP Distance", false, function(s) CFG.ESPDistance = s end)
+
+addLabel(vis, "─── HUD ───")
+addToggle(vis, "Cursor Dot", false, function(s) CFG.CursorDot = s end)
+addToggle(vis, "FPS / Ping Counter", false, function(s) CFG.FPSPing = s end)
+
+-- ─── EXPLOIT TAB ──────────────────────────────────────────
+local exp = pages["Exploit"]
+addLabel(exp, "─── FLY ───")
+addToggle(exp, "Fly", false, function(s) CFG.Fly = s end)
+addSlider(exp, "Fly Speed", 10, 500, 50, 1, function(v) CFG.FlySpeed = v end)
+
+addLabel(exp, "─── MOVEMENT ───")
+addToggle(exp, "Noclip", false, function(s) CFG.Noclip = s end)
+addToggle(exp, "Infinite Jump", false, function(s) CFG.InfiniteJump = s end)
+addToggle(exp, "Click TP", false, function(s) CFG.ClickTP = s end)
+addToggle(exp, "Anti Void", false, function(s) CFG.AntiVoid = s end)
+addToggle(exp, "Anti Ragdoll", false, function(s) CFG.AntiRagdoll = s end)
+addToggle(exp, "Walk on Water", false, function(s) CFG.WalkWater = s end)
+addToggle(exp, "Freeze Player", false, function(s) CFG.FreezePlayer = s end)
+
+addLabel(exp, "─── FLING ───")
+addToggle(exp, "Fling", false, function(s) CFG.Fling = s end)
+addToggle(exp, "Anti Fling", false, function(s) CFG.AntiFling = s end)
+addToggle(exp, "Anti Sit", false, function(s) CFG.AntiSit = s end)
+
+addLabel(exp, "─── SPEED / JUMP ───")
+addToggle(exp, "Speed Changer", false, function(s) CFG.SpeedToggle = s end)
+addSlider(exp, "Speed", 1, 500, 16, 1, function(v) CFG.SpeedValue = v end)
+addToggle(exp, "Jump Power Changer", false, function(s) CFG.JumpToggle = s end)
+addSlider(exp, "Jump Power", 1, 500, 50, 1, function(v) CFG.JumpValue = v end)
+
+addLabel(exp, "─── AUTO ───")
+addToggle(exp, "Auto Farm", false, function(s) CFG.AutoFarm = s end)
+addBtn(exp, "Bring All Players", function()
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if isEnemy(plr) and plr.Character then
+            local vhrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if vhrp then
+                pcall(function()
+                    vhrp.CFrame = hrp.CFrame + Vector3.new(math.random(-5,5), 0, math.random(-5,5))
+                end)
+            end
+        end
+    end
+end)
+addBtn(exp, "Teleport To Cursor", function()
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and mouse.Hit then
+        hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+    end
+end)
+
+-- ─── UTILITY TAB ──────────────────────────────────────────
+local util = pages["Utility"]
+addLabel(util, "─── PANIC ───")
+addBtn(util, "PANIC — Disable All", function()
+    CFG.RapidFire = false
+    CFG.Aimbot = false
+    CFG.SilentAim = false
+    CFG.TriggerBot = false
+    CFG.MagicBullet = false
+    CFG.BigHead = false
+    CFG.Fly = false
+    CFG.Fling = false
+    CFG.KillAura = false
+    if flyBV then flyBV:Destroy() flyBV = nil end
+    if flyBG then flyBG:Destroy() flyBG = nil end
+end)
+
+addLabel(util, "─── CONFIG ───")
+addBtn(util, "Save Config", function()
+    local data = HttpService:JSONEncode(CFG)
+    pcall(function()
+        writefile("azi_config.json", data)
+    end)
+end)
+addBtn(util, "Load Config", function()
+    pcall(function()
+        local data = readfile("azi_config.json")
+        local decoded = HttpService:JSONDecode(data)
+        for k, v in pairs(decoded) do
+            if CFG[k] ~= nil then CFG[k] = v end
+        end
+    end)
+end)
+
+addLabel(util, "─── WHITELIST ───")
+addBtn(util, "Whitelist Me", function()
+    pcall(function()
+        local existing = {}
+        pcall(function() existing = HttpService:JSONDecode(readfile("azi_whitelist.json")) end)
+        existing[tostring(LP.UserId)] = true
+        pcall(function() writefile("azi_whitelist.json", HttpService:JSONEncode(existing)) end)
+    end)
+end)
+
+-- ─── DRAG ─────────────────────────────────────────────────
+local drag, dragStart, startPos
+top.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        drag = true; dragStart = i.Position; startPos = main.Position
+    end
+end)
+UIS.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        drag = false
+    end
+end)
+UIS.InputChanged:Connect(function(i)
+    if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+    end
+end)
+
+-- ─── FOV CIRCLE ───────────────────────────────────────────
+local circle = Instance.new("Frame")
+circle.AnchorPoint = Vector2.new(0.5, 0.5)
+circle.Position = UDim2.new(0.5, 0, 0.5, 0)
+circle.BackgroundTransparency = 1
+circle.Visible = false
+circle.Parent = sg
+local circleStroke = Instance.new("UIStroke")
+circleStroke.Color = CFG.ThemeColor
+circleStroke.Thickness = 1.5
+circleStroke.Parent = circle
+local circleCorner = Instance.new("UICorner"); circleCorner.CornerRadius = UDim.new(1, 0); circleCorner.Parent = circle
+
+-- ─── CURSOR DOT ───────────────────────────────────────────
+local cursorDot = Instance.new("Frame")
+cursorDot.Size = UDim2.new(0, 6, 0, 6)
+cursorDot.AnchorPoint = Vector2.new(0.5, 0.5)
+cursorDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+cursorDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+cursorDot.BorderSizePixel = 0
+cursorDot.Visible = false
+cursorDot.Parent = sg
+local cdCorner = Instance.new("UICorner"); cdCorner.CornerRadius = UDim.new(1, 0); cdCorner.Parent = cursorDot
+
+-- ─── FPS/PING ─────────────────────────────────────────────
+local hud = Instance.new("TextLabel")
+hud.Size = UDim2.new(0, 180, 0, 40)
+hud.Position = UDim2.new(0, 10, 0, 10)
+hud.BackgroundTransparency = 1
+hud.TextColor3 = Color3.fromRGB(255, 255, 255)
+hud.Font = Enum.Font.GothamBold
+hud.TextSize = 12
+hud.TextXAlignment = Enum.TextXAlignment.Left
+hud.TextYAlignment = Enum.TextYAlignment.Top
+hud.Visible = false
+hud.Parent = sg
+
+-- ─── ESP FOLDER ───────────────────────────────────────────
+local espFolder = Instance.new("Folder")
+espFolder.Name = "ESP"
+espFolder.Parent = sg
+
+-- ─── HELPERS ──────────────────────────────────────────────
+local function isEnemy(plr)
+    if not plr or plr == LP then return false end
+    if CFG.TeamCheck and plr.Team and LP.Team and plr.Team == LP.Team then return false end
+    return true
+end
+
+local function isAlive(plr)
+    local char = plr.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    if CFG.IgnoreDead and hum.Health <= 0 then return false end
+    return true
+end
+
+local function getTarget()
+    local best, bd = nil, CFG.AimbotFOV
+    local center = Vector2.new(Cam.ViewportSize.X / 2, Cam.ViewportSize.Y / 2)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if isEnemy(plr) and isAlive(plr) then
+            local head = plr.Character:FindFirstChild(CFG.HitPart)
+            if head then
+                local sp, on = Cam:WorldToViewportPoint(head.Position)
+                if on and sp.Z > 0 then
+                    local d = (Vector2.new(sp.X, sp.Y) - center).Magnitude
+                    if d < bd then bd = d; best = head end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- ─── FLY BODIES ───────────────────────────────────────────
+local flyBV, flyBG
+
+local function stopFly()
+    if flyBV then flyBV:Destroy() flyBV = nil end
+    if flyBG then flyBG:Destroy() flyBG = nil end
+    local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+    if hum then hum.PlatformStand = false end
+end
+
+local function startFly()
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+    stopFly()
+    flyBV = Instance.new("BodyVelocity")
+    flyBV.MaxForce = Vector3.new(9e4, 9e4, 9e4)
+    flyBV.Velocity = Vector3.new(0, 0, 0)
+    flyBV.Parent = hrp
+    flyBG = Instance.new("BodyGyro")
+    flyBG.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
+    flyBG.CFrame = hrp.CFrame
+    flyBG.Parent = hrp
+    hum.PlatformStand = true
+end
+
+-- ─── RAPID FIRE ───────────────────────────────────────────
+local function applyRapid(tool)
+    if not CFG.RapidFire then return end
+    pcall(function()
+        tool:SetAttribute("RateOfFire", CFG.RapidFireRate)
+        tool:SetAttribute("rateOfFire", CFG.RapidFireRate)
+        tool:SetAttribute("FireRate", CFG.RapidFireRate)
+        if CFG.NoReload then
+            tool:SetAttribute("ReloadTime", 0)
+        end
+    end)
+end
+
+local function watchContainer(container)
+    for _, c in ipairs(container:GetChildren()) do
+        if c:IsA("Tool") then applyRapid(c) end
+    end
+    container.ChildAdded:Connect(function(c)
+        if c:IsA("Tool") then applyRapid(c) end
+    end)
+end
+
+if LP.Character then watchContainer(LP.Character) end
+if LP:FindFirstChildOfClass("Backpack") then watchContainer(LP:FindFirstChildOfClass("Backpack")) end
+LP.CharacterAdded:Connect(function(c)
+    task.wait(0.5)
+    watchContainer(c)
+end)
+LP.ChildAdded:Connect(function(c)
+    if c:IsA("Backpack") then watchContainer(c) end
+end)
+
+-- ─── MAGIC BULLET ─────────────────────────────────────────
+local function applyMagicBullet()
+    if not CFG.MagicBullet then return end
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if isEnemy(plr) and isAlive(plr) then
+            local head = plr.Character:FindFirstChild("Head")
+            local vhrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if head and vhrp then
+                local dist = (vhrp.Position - hrp.Position).Magnitude
+                if dist <= 1000 then
+                    pcall(function()
+                        head:SetAttribute("HitBy", LP.UserId)
+                        head:SetAttribute("Damage", 100000 * CFG.DamageMulti)
+                    end)
+                end
+            end
+        end
+    end
+end
+
+-- ─── ANTI-FLING / RAGDOLL ─────────────────────────────────
+local function antiFlingHook(char)
+    local hrp = char:WaitForChild("HumanoidRootPart", 5)
+    if not hrp then return end
+    hrp.ChildAdded:Connect(function(child)
+        if not CFG.AntiFling then return end
+        if child:IsA("BodyAngularVelocity") or child:IsA("BodyVelocity") or child:IsA("BodyForce") then
+            child:Destroy()
+        end
+    end)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.StateChanged:Connect(function(_, new)
+            if CFG.AntiRagdoll and new == Enum.HumanoidStateType.Physics then
+                hum:ChangeState(Enum.HumanoidStateType.Running)
+            end
+        end)
+    end
+end
+
+if LP.Character then antiFlingHook(LP.Character) end
+LP.CharacterAdded:Connect(antiFlingHook)
+
+-- ─── INFINITE JUMP ────────────────────────────────────────
+UIS.JumpRequest:Connect(function()
+    if CFG.InfiniteJump then
+        local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- ─── CLICK TP ─────────────────────────────────────────────
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if CFG.ClickTP and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and mouse.Hit then
+            hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3
